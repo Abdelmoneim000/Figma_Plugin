@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>S3 Image Uploader</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      button {
+        background-color: #4caf50;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+      }
+      select {
+        font-size: 16px;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>S3 Image Uploader</h1>
+    <button id="upload-button">Upload</button>
+    <select id="format-select">
+      <option value="PNG">PNG</option>
+      <option value="JPG">JPG</option>
+    </select>
+    <h2>Previous Uploads</h2>
+    <ul id="previous-uploads"></ul>
+
+    <script>
+      const uploadButton = document.getElementById("upload-button");
+      const formatSelect = document.getElementById("format-select");
+      const previousUploadsContainer =
+        document.getElementById("previous-uploads");
+
+      uploadButton.addEventListener("click", async () => {
+        const format = formatSelect.value;
+        console.log("before getting selected node");
+        const node = await getSelectedNode();
+        console.log("after getting selected node");
+        
+
+
+        await parent.postMessage(
+          { pluginMessage: { type: "upload", format } },
+          "*"
+        );
+      });
+
+      let previousUploads = {};
+
+      window.onmessage = (event) => {
+        const { type, data, message } = event.data.pluginMessage;
+        switch (type) {
+          case "uploads":
+            previousUploads = data;
+            updatePreviousUploadsDisplay();
+            break;
+          case "error":
+            alert(message);
+            break;
+        }
+      };
+
+      async function getSelectedNode() {
+        parent.postMessage(
+            { pluginMessage: { type: "get-selected-node" } },
+            "*"
+          );
+      }
+
+      function updatePreviousUploadsDisplay() {
+        previousUploadsContainer.innerHTML = "";
+        for (const [nodeId, url] of Object.entries(previousUploads)) {
+          const li = document.createElement("li");
+          li.textContent = `${nodeId} - ${url}`;
+          previousUploadsContainer.appendChild(li);
+        }
+      }
+    </script>
+  </body>
+</html>
