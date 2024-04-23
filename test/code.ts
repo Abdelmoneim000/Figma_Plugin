@@ -2,10 +2,12 @@
 figma.showUI(__html__, { width: 400, height: 600 });
 
 let previousUploads: Record<string, string> = {};
+let imageUrls: string[] = [];
 
 interface RES extends Response {
   ok: boolean;
   status: number;
+  text(): string;
 }
 
 figma.ui.onmessage = async (msg: any) => {
@@ -30,7 +32,15 @@ figma.ui.onmessage = async (msg: any) => {
       figma.ui.postMessage({ type: 'uploads', data: previousUploads });
 
       // Send the image data to the server
-      await sendImageToServer(imageData, msg.format, node.id);
+      const response = await sendImageToServer(imageData, msg.format, node.id);
+      const url = await (response as RES).text();
+      imageUrls.push(url);
+
+      if (imageUrls.length > 200) {
+        imageUrls.shift();
+      }
+
+      figma.ui.postMessage({ type: 'imageUrls', data: imageUrls });
     } catch (err) {
       figma.ui.postMessage({ type: 'error', message: (err as Error).message });
     }
@@ -65,7 +75,12 @@ async function sendImageToServer(imageData: Uint8Array, format: 'PNG' | 'JPG', n
 
   if (!(response as RES).ok) {
     throw new Error(`Server responded with status ${(response as RES).status}`);
+  } else {
+    const data = (response as RES);
   }
+  const imagePath = `uploads/${nodeId.split(":").join("_")}.${format.toLowerCase()}`;
 
   console.log('Image sent to server successfully');
+  figma.ui.postMessage({ type: 'success', message: `http://localhost:3000/${imagePath}` })
+  return response;
 }

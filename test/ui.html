@@ -57,11 +57,7 @@
 
       uploadButton.addEventListener("click", async () => {
         const format = formatSelect.value;
-        console.log("before getting selected node");
         const node = await getSelectedNode();
-        console.log("after getting selected node");
-        
-
 
         await parent.postMessage(
           { pluginMessage: { type: "upload", format } },
@@ -69,20 +65,44 @@
         );
       });
 
-      let previousUploads = {};
+      
+      let previousUploads = [];
 
       window.onmessage = (event) => {
         const { type, data, message } = event.data.pluginMessage;
         switch (type) {
           case "uploads":
-            previousUploads = data;
-            updatePreviousUploadsDisplay();
+            updatePreviousUploadsDisplay(previousUploads);
+            break;
+          case "success":
+            UpdatedArray(`${message}`, previousUploads);
+            console.log(previousUploads);
             break;
           case "error":
             alert(message);
             break;
         }
       };
+
+      function UpdatedArray(newUrl, uploadedURLs = previousUploads) {
+        let index;
+
+        for(let i = 0; i < uploadedURLs.length; i++) {
+          if(uploadedURLs[i] === newUrl) {
+            index = i;
+            console.log(index, uploadedURLs);
+            break;
+          }
+        }
+        
+        if (index !== -1) {
+          // Remove the existing URL if it's in the array
+          previousUploads.splice(index, 1);
+        }
+        
+        // Add the new URL to the array
+        previousUploads.push(newUrl);
+      }
 
       async function getSelectedNode() {
         parent.postMessage(
@@ -91,11 +111,15 @@
           );
       }
 
-      function updatePreviousUploadsDisplay() {
+      function updatePreviousUploadsDisplay(uploadedURLs) {
         previousUploadsContainer.innerHTML = "";
-        for (const [nodeId, url] of Object.entries(previousUploads)) {
+        for(let i = 0; i < uploadedURLs.length; i++) {
           const li = document.createElement("li");
-          li.textContent = `${nodeId} - ${url}`;
+          const a = document.createElement("a");
+          a.href = uploadedURLs[i];
+          a.textContent = uploadedURLs[i];
+          a.target = "_blank";
+          li.appendChild(a);
           previousUploadsContainer.appendChild(li);
         }
       }

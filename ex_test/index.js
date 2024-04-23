@@ -23,11 +23,17 @@ app.post('/upload', (req, res) => {
   try {
     fs.writeFileSync(imagePath, imageData);
     console.log(`Image saved at ${imagePath}`);
-    res.send('File uploaded successfully');
+    res.status(200).send(`http://localhost:3000/${imagePath}`);
   } catch (err) {
     console.error('Error saving file:', err);
     res.status(500).send('Error saving file');
   }
+});
+
+// Create a GET route to serve the uploaded files
+app.get('/:path', (req, res) => {
+  const path = req.params.path;
+  res.sendFile(path, { root: __dirname });
 });
 
 // Create the uploads folder if it doesn't exist
@@ -38,4 +44,4 @@ if (!fs.existsSync('uploads')) {
 // Start the server
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
-});
+}); 
