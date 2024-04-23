@@ -31,9 +31,9 @@ app.post('/upload', (req, res) => {
 });
 
 // Create a GET route to serve the uploaded files
-app.get('/:path', (req, res) => {
+app.get('/uploads/:path', (req, res) => {
   const path = req.params.path;
-  res.sendFile(path, { root: __dirname });
+  res.sendFile(path, { root: __dirname + '/uploads' });
 });
 
 // Create the uploads folder if it doesn't exist

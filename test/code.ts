@@ -48,12 +48,10 @@ figma.ui.onmessage = async (msg: any) => {
 };
 
 async function saveImageLocally(node: any, imageData: Uint8Array, format: 'PNG' | 'JPG'): Promise<string> {
-  console.log('Saving node:', node);
   const fileName = `${node.id}.${format.toLowerCase()}`;
   const filePath = `${figma.root.name}/${fileName}`;
 
   figma.createImage(imageData);
-  console.log(`Image saved locally at: ${filePath}`);
   return filePath;
 }
 
@@ -75,12 +73,9 @@ async function sendImageToServer(imageData: Uint8Array, format: 'PNG' | 'JPG', n
 
   if (!(response as RES).ok) {
     throw new Error(`Server responded with status ${(response as RES).status}`);
-  } else {
-    const data = (response as RES);
   }
   const imagePath = `uploads/${nodeId.split(":").join("_")}.${format.toLowerCase()}`;
 
-  console.log('Image sent to server successfully');
   figma.ui.postMessage({ type: 'success', message: `http://localhost:3000/${imagePath}` })
   return response;
 }

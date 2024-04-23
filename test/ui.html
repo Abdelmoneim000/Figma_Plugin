@@ -71,11 +71,9 @@
       window.onmessage = (event) => {
         const { type, data, message } = event.data.pluginMessage;
         switch (type) {
-          case "uploads":
-            updatePreviousUploadsDisplay(previousUploads);
-            break;
           case "success":
             UpdatedArray(`${message}`, previousUploads);
+            updatePreviousUploadsDisplay(previousUploads);
             console.log(previousUploads);
             break;
           case "error":
@@ -85,24 +83,12 @@
       };
 
       function UpdatedArray(newUrl, uploadedURLs = previousUploads) {
-        let index;
-
-        for(let i = 0; i < uploadedURLs.length; i++) {
-          if(uploadedURLs[i] === newUrl) {
-            index = i;
-            console.log(index, uploadedURLs);
-            break;
-          }
+        if (!uploadedURLs.includes(newUrl)) {
+          // Add the new URL to the array
+          previousUploads.push(newUrl);
         }
-        
-        if (index !== -1) {
-          // Remove the existing URL if it's in the array
-          previousUploads.splice(index, 1);
-        }
-        
-        // Add the new URL to the array
-        previousUploads.push(newUrl);
       }
+
 
       async function getSelectedNode() {
         parent.postMessage(
@@ -112,7 +98,7 @@
       }
 
       function updatePreviousUploadsDisplay(uploadedURLs) {
-        previousUploadsContainer.innerHTML = "";
+        previousUploadsContainer.innerHTML = ""; // clear the container
         for(let i = 0; i < uploadedURLs.length; i++) {
           const li = document.createElement("li");
           const a = document.createElement("a");
@@ -122,7 +108,8 @@
           li.appendChild(a);
           previousUploadsContainer.appendChild(li);
         }
-      }
+    }
+
     </script>
   </body>
 </html>
