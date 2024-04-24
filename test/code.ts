@@ -10,8 +10,11 @@ interface RES extends Response {
   text(): string;
 }
 
+figma.on('selectionchange', () => {
+  figma.ui.postMessage({ type: 'selected-node', message: `http://localhost:3000/uploads/${figma.currentPage.selection[0]?.id.split(":").join("_")}`});
+});
+
 figma.ui.onmessage = async (msg: any) => {
-  console.log(msg.type);
   if (msg.type === 'upload') {
     try {
       const node = figma.currentPage.selection[0];
@@ -45,6 +48,14 @@ figma.ui.onmessage = async (msg: any) => {
       figma.ui.postMessage({ type: 'error', message: (err as Error).message });
     }
   }
+
+  if (msg.type === 'get-selected-node') {
+    const nodeId = figma.currentPage.selection[0]?.id;
+    if (nodeId) {
+      const isPreviouslyUploaded = previousUploads[nodeId] !== undefined;
+      figma.ui.postMessage({ type: 'selected-node', nodeId, isPreviouslyUploaded });
+    }
+  }
 };
 
 async function saveImageLocally(node: any, imageData: Uint8Array, format: 'PNG' | 'JPG'): Promise<string> {
@@ -57,7 +68,6 @@ async function saveImageLocally(node: any, imageData: Uint8Array, format: 'PNG' 
 
 async function deleteImageLocally(filePath: string) {
   await figma.clientStorage.deleteAsync(filePath);
-  console.log(`Deleted image file at: ${filePath}`);
 }
 
 async function sendImageToServer(imageData: Uint8Array, format: 'PNG' | 'JPG', nodeId: string) {

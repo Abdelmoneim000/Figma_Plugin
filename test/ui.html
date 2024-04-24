@@ -79,6 +79,16 @@
           case "error":
             alert(message);
             break;
+          case "selected-node":
+            const uploadedNode = isPreviouslyUploaded(message, previousUploads);
+            if (uploadedNode) { 
+              uploadButton.textContent = "Update";
+              console.log(uploadedNode)
+            } else {
+              uploadButton.textContent = "Upload";
+              console.log(uploadedNode);
+            }
+            break;
         }
       };
 
@@ -95,6 +105,10 @@
             { pluginMessage: { type: "get-selected-node" } },
             "*"
           );
+      }
+
+      function isPreviouslyUploaded(url, uploadedURLs) {
+        return uploadedURLs.includes(url + ".png") || uploadedURLs.includes(url + ".jpg");
       }
 
       function updatePreviousUploadsDisplay(uploadedURLs) {
