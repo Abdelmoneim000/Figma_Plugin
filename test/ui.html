@@ -74,7 +74,6 @@
           case "success":
             UpdatedArray(`${message}`, previousUploads);
             updatePreviousUploadsDisplay(previousUploads);
-            console.log(previousUploads);
             break;
           case "error":
             alert(message);
@@ -83,10 +82,8 @@
             const uploadedNode = isPreviouslyUploaded(message, previousUploads);
             if (uploadedNode) { 
               uploadButton.textContent = "Update";
-              console.log(uploadedNode)
             } else {
               uploadButton.textContent = "Upload";
-              console.log(uploadedNode);
             }
             break;
         }
