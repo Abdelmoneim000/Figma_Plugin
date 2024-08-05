@@ -16,9 +16,15 @@ const App: React.FC = () => {
 
   const handleMessage = (event: MessageEvent) => {
     const { type, message, nodeId, isPreviouslyUploaded, data } = event.data.pluginMessage;
-    console.log(event.data.pluginMessage);
-    console.log(nodeId)
     switch (type) {
+      case 'uploads':
+        for (const key in data) {
+          if (data.hasOwnProperty(key)) {
+            const value = data[key];
+            updateArray(value); // Assuming updateArray needs both key and value
+          }
+        }
+        break;
       case 'success':
         updateArray(message);
         updatePreviousUploadsDisplay(data);
@@ -28,11 +34,11 @@ const App: React.FC = () => {
         break;
       case 'selected-node':
         setUploadButtonText(isPreviouslyUploaded ? 'Update' : 'Upload');
+        console.log(nodeId);
         break;
       case 'imageUrls':
         updateArray(message);
         updatePreviousUploadsDisplay(data);
-        console.log(data);
         break;
       default:
         break;
@@ -45,7 +51,7 @@ const App: React.FC = () => {
     }
   };
 
-  const updatePreviousUploadsDisplay = (data) => {
+  const updatePreviousUploadsDisplay = (data: string[]) => {
     setPreviousUploads((prevUploads) => [...prevUploads, ...data]);
   };
 

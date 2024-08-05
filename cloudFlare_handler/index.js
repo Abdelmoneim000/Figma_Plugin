@@ -25,7 +25,6 @@ function bufferToStream(buffer) {
   });
 }
 
-// Create a POST route for file upload
 app.post('/upload', async (req, res) => {
   if (!req.body) {
     console.log('No file uploaded');
@@ -67,7 +66,32 @@ app.post('/upload', async (req, res) => {
     const imageUrl = result.result.variants[0]; // Assuming the first variant is the URL you need
     console.log(`Image uploaded to Cloudflare: ${imageUrl}`);
 
-    // Send the local file path and image URL back to the Figma plugin
+    // Save the upload information to uploads_history.json
+    const uploadsHistoryPath = path.join(__dirname, 'uploads_history.json');
+    let uploadsHistory = {};
+
+    // Check if uploads_history.json file exists and read its content
+    if (fs.existsSync(uploadsHistoryPath)) {
+      const rawData = fs.readFileSync(uploadsHistoryPath, 'utf8');
+      try {
+        uploadsHistory = JSON.parse(rawData);
+        if (typeof uploadsHistory !== 'object' || Array.isArray(uploadsHistory)) {
+          uploadsHistory = {};
+        }
+      } catch (err) {
+        console.error('Error parsing uploads_history.json:', err);
+        uploadsHistory = {};
+      }
+    }
+
+    // Append new entry to the history
+    uploadsHistory[nodeId] = imageUrl;
+    console.log(uploadsHistory);
+
+    // Write updated history to file
+    fs.writeFileSync(uploadsHistoryPath, JSON.stringify(uploadsHistory, null, 2));
+
+    // Send the image URL back to the Figma plugin
     res.status(200).send(imageUrl);
   } catch (err) {
     console.error('Error uploading to Cloudflare:', err);
@@ -75,10 +99,24 @@ app.post('/upload', async (req, res) => {
   }
 });
 
+// Add a GET route to retrieve uploads_history.json
+app.get('/uploads-history', (req, res) => {
+  console.log('Received request to get uploads history'); // Log request
+  const uploadsHistoryPath = path.join(__dirname, 'uploads_history.json');
+  res.sendFile(uploadsHistoryPath);
+});
+
+
 // Create the uploads folder if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
+} 
+
+// Create the json file for previous uploads if it doesn't exist
+if (!fs.existsSync('uploads_history.json')) {
+  fs.writeFileSync('uploads_history.json', JSON.stringify({}));
 }
+
 
 // Start the server
 app.listen(3000, () => {

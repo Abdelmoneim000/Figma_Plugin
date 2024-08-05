@@ -1,4 +1,4 @@
-figma.showUI(__html__, { width: 400, height: 600 });
+figma.showUI(__html__, { width: 500, height: 700 });
 
 let previousUploads: Record<string, string> = {};
 let imageUrls: string[] = [];
@@ -17,34 +17,31 @@ interface RES extends Response {
     };
   }>;
 }
-figma.on('selectionchange', () => {
-  let selection = figma.currentPage.selection[0];
-  console.log(selection.id);
-  figma.ui.postMessage({ type: 'selected-node', isPreviouslyUploaded: figma.clientStorage.getAsync(`${selection ? selection.id : ""}`) ? true : false });
-  console.log(figma.clientStorage.getAsync(`${selection?.id}`));
+
+async function loadPreviousUploads() {
+  try {
+    const response = await fetch('http://localhost:3000/uploads-history');
+    if (!response.ok) {
+      throw new Error(`Server responded with status ${response.status}`);
+    }
+    previousUploads = await response.json();
+    figma.ui.postMessage({ type: 'uploads', data: previousUploads });
+  } catch (err) {
+    console.error('Error loading previous uploads:', err);
+  }
+}
+
+figma.on('selectionchange', async () => {
+  const selection = figma.currentPage.selection[0]?.id;
+  const isPreviouslyUploaded = previousUploads[selection] ? true : false;
+  figma.ui.postMessage({ type: 'selected-node', isPreviouslyUploaded, nodeId: selection });
 });
 
-figma.on('documentchange', (event) => {
-  for (const change of event.documentChanges) {
-    switch (change.type) {
-      case 'DELETE':
-        if (previousUploads[change.node.id]) {
-          deleteImageLocally(previousUploads[change.node.id]);
-          delete previousUploads[change.node.id];
-          figma.clientStorage.deleteAsync(change.node.id);
-        }
-        break;
-      default:
-        break;
-    }
-  }
-});
 
 figma.ui.onmessage = async (msg: any) => {
   if (msg.type === 'upload') {
     try {
       const node = figma.currentPage.selection[0];
-      console.log()
       if (!node) {
         figma.ui.postMessage({ type: 'error', message: 'No node selected' });
         return;
@@ -54,14 +51,12 @@ figma.ui.onmessage = async (msg: any) => {
       const filePath = await saveImageLocally(node, imageData, msg.format);
 
       if (previousUploads[msg.nodeId]) {
-        // Remove previous image file
         await deleteImageLocally(previousUploads[msg.nodeId]);
       }
 
       previousUploads[msg.nodeId] = filePath;
       figma.ui.postMessage({ type: 'uploads', data: previousUploads });
 
-      // Send the image data to the server
       const response = await sendImageToServer(imageData, msg.format, node.id);
       const imageUrl = await response.text();
       imageUrls.push(imageUrl);
@@ -69,20 +64,12 @@ figma.ui.onmessage = async (msg: any) => {
       if (imageUrls.length > 200) {
         imageUrls.shift();
       }
-      figma.clientStorage.deleteAsync('imageUrls');
-      figma.clientStorage.setAsync('imageUrls', imageUrls);
       figma.ui.postMessage({ type: 'imageUrls', data: imageUrls });
+
+      previousUploads[node.id] = imageUrl;
+
     } catch (err) {
       figma.ui.postMessage({ type: 'error', message: (err as Error).message });
-    }
-  }
-
-  if (msg.type === 'get-selected-node') {
-    const nodeId = figma.currentPage.selection[0]?.id;
-    if (nodeId) {
-      const isPreviouslyUploaded = previousUploads[nodeId] !== undefined;
-      console.log(isPreviouslyUploaded);
-      figma.ui.postMessage({ type: 'selected-node', nodeId, isPreviouslyUploaded });
     }
   }
 };
@@ -109,10 +96,11 @@ async function sendImageToServer(imageData: Uint8Array, format: 'PNG' | 'JPG', n
     },
     body: imageData,
   }) as RES;
-  figma.clientStorage.setAsync(`${nodeId}`, nodeId);
   if (!response.ok) {
     throw new Error(`Server responded with status ${response.status}`);
   }
-
   return response;
 }
+
+// Load previous uploads on initialization
+loadPreviousUploads();
