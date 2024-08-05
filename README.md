@@ -43,6 +43,9 @@ yarn
 
 Run the command to start webpack in watch mode, which will build the plugin code.
 
+> [!IMPORTANT]
+> Create a `.env` file in the root of `cloudFlare_handler` directory and put your `CLOUDFLARE_API_TOKEN` & `URL` of your account to post the images before starting the app.
+
 ```sh
 yarn build:watch
 ```
